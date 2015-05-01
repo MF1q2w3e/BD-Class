@@ -244,7 +244,7 @@ coef(causal)["d",] # coeff for d
 ### QUESTION 5: MATT
 ### [5]. Bootstrap your estimator from [3] and describe the uncertainty.
 
-## Repurposing the below from the abortion.R example:
+## Repurposing the below:
 # first get a rowcount on x:
 n <- nrow(x)
 ## then create and empty gamma vector:
@@ -256,17 +256,34 @@ for(b in 1:1000){  # <-- iterate through:
   xb <- x[ib,]
   db <- d[ib]
   yb <- y[ib]
-  ## run the treatment regression
+  ## re-run the treatment regression
   treatb <- gamlr(xb,db,lambda.min.ratio=1e-3)
-  dhatb <- predict(treatb, xb, type="response")
-  
-  fitb <- gamlr(cBind(db,dhatb,xb),yb,free=2)
+  dhatb <- predict(treatb, xb, type="response")  
+  fitb <- gamlr(cBind(db,dhatb,xb),yb,free=2, family="binomial")
+  # assign to gamma vector
   gamb <- c(gamb,coef(fitb)["db",])
   print(b)
 }
-# Run a summary on gamb, then a histogram:
-summary(gamb) 
-hist(gamb)
+
+# Run a summary on gamb:
+print("Summary of gamb:")
+print(summary(gamb)) 
+
+print("StdDev of gamb:")
+print(sd(gamb)) 
+
+print("95% Confidence interval of gamb:")
+print(c("+2sd: ", mean(gamb)+(2*sd(gamb)) ))
+print(c("-2sd: ", mean(gamb)-(2*sd(gamb)) ))
+print("d coefficient from causal model:")
+print(coef(causal)["d",])
+
+# Then output a histogram
+hist(gamb, main="Dist. of Bootstrapped \nEstimator Coefs.", xlab="Gammas", col=rgb(0,0,1,0.5))
+abline(v=mean(gamb),col="green", lwd=3)
+abline(v=coef(causal)["d",],col="red", lwd=3)
+legend("topright", bty="n", c("coef(causal)[d,]", "mean(gamb)","95% Conf Int."), col = c("red","green",rgb(0,1,0,.2)), lwd = 2, cex = 0.75)
+polygon(x=c(rep(mean(gamb)-(2*sd(gamb)),2),rep(mean(gamb)+(2*sd(gamb)),2)), y=c(0,200,200,0), col=rgb(0,1,0,.2), border=NA)
 
 ### QUESTION 6: MOIZ
 ### [+]. Can you think of how you'd design an experiment
