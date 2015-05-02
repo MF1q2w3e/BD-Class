@@ -131,4 +131,78 @@ legend("topleft", bty="n",
 # [+] Can you translate player Bk effects into something
 # comparable to classic Plus-Minus? How do things compare?
 
+# Definition of classic P-M:
+# even-strength goal or shorthanded goal    --> +1
+# allowing the goal                         --> -1
+# Powerplay                                 --> 0
+# Empty net                                 --> 0
+
+# Original attempt: plus_minus <- ifelse(player ==1  & goal$homegoal == 1, 1, ifelse(player == -1 & goal$homegoal ==0, 1, -1))  
+
+# Organize the data by season, let's look at the last 5 seasons of data:
+s_1314 <- goal$season=="20132014"
+s_1213 <- goal$season=="20122013"
+s_1112 <- goal$season=="20112012"
+s_1011 <- goal$season=="20102011"
+s_0910 <- goal$season=="20092010"
+
+## Get each season's traditional Plus-Minus:
+pm_1314 <- colSums(player[s_1314,names(Baicc)])
+pm_1213 <- colSums(player[s_1213,names(Baicc)])
+pm_1112 <- colSums(player[s_1112,names(Baicc)])
+pm_1011 <- colSums(player[s_1011,names(Baicc)])
+pm_0910 <- colSums(player[s_0910,names(Baicc)])
+
+## Then grab each season's total number of goals
+g_1314 <- colSums(abs(player[s_1314,names(Baicc)]))
+g_1213 <- colSums(abs(player[s_1213,names(Baicc)]))
+g_1112 <- colSums(abs(player[s_1112,names(Baicc)]))
+g_1011 <- colSums(abs(player[s_1011,names(Baicc)]))
+g_0910 <- colSums(abs(player[s_0910,names(Baicc)]))
+
+# Next you need to find the probability of a goal for or against an individual player's team, given ALL the data.
+p_fa <- 1/(1+exp(-Baicc))
+
+# Take that probability, and find an expected Plus-Minus for each of those seasons in question: 
+e_pm_1314 <- g_1314*(2*p_fa-1)
+e_pm_1213 <- g_1213*(2*p_fa-1)
+e_pm_1112 <- g_1112*(2*p_fa-1)
+e_pm_1011 <- g_1011*(2*p_fa-1)
+e_pm_0910 <- g_0910*(2*p_fa-1)
+
+# Lastly, organize all the data, and print out each year's Expected Plus-Minus (e_pm_season) and actual Plus-Minus (pm_season) to compare.
+comp_1314 <- data.frame(beta=round(Baicc,3),e_pm=round(e_pm_1314,3),pm=round(pm_1314,3))
+comp_1213 <- data.frame(beta=round(Baicc,3),e_pm=round(e_pm_1213,3),pm=round(pm_1213,3))
+comp_1112 <- data.frame(beta=round(Baicc,3),e_pm=round(e_pm_1112,3),pm=round(pm_1112,3))
+comp_1011 <- data.frame(beta=round(Baicc,3),e_pm=round(e_pm_1011,3),pm=round(pm_1011,3))
+comp_0910 <- data.frame(beta=round(Baicc,3),e_pm=round(e_pm_0910,3),pm=round(pm_0910,3))
+
+# Order each by Expected Plus-Minus:
+comp_1314 <- comp_1314[order(-comp_1314$e_pm),]
+comp_1213 <- comp_1213[order(-comp_1213$e_pm),]
+comp_1112 <- comp_1112[order(-comp_1112$e_pm),]
+comp_1011 <- comp_1011[order(-comp_1011$e_pm),]
+comp_0910 <- comp_0910[order(-comp_0910$e_pm),]
+
+# Print out the Top 10 for each season:
+print("Expected vs. Actual Plus-Minus for the 2013-2014 NHL Season, Top 10")
+print(comp_1314[1:10,])
+print("")
+
+print("Expected vs. Actual Plus-Minus for the 2012-2013 NHL Season, Top 10")
+print(comp_1213[1:10,])
+print("")
+
+print("Expected vs. Actual Plus-Minus for the 2011-2012 NHL Season, Top 10")
+print(comp_1112[1:10,])
+print("")
+
+print("Expected vs. Actual Plus-Minus for the 2010-2011 NHL Season, Top 10")
+print(comp_1011[1:10,])
+print("")
+
+print("Expected vs. Actual Plus-Minus for the 2009-2010 NHL Season, Top 10")
+print(comp_0910[1:10,])
+
+
 
