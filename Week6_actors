@@ -5,8 +5,6 @@
 
 ### LOAD FILES & LIBRARIES #####################################
 
-setwd("WEEK6")
-
 library(igraph)
 
 ### GRAPH
@@ -67,8 +65,9 @@ names(nroles) <- colnames(actmat)
 # movie. Plot the entire actors network.
 
 plot(actnet,vertex.label=NA, edge.curved=FALSE)
+
 # Funny story--try graphing this without turning off the labels.
-  
+
 
 
 
@@ -100,40 +99,85 @@ plot(costars2, vertex.label=NA, vertex.size=12, edge.curved=FALSE,
 costars3 <- graph.neighborhood(actnet, 3, V(actnet)[actor])[[1]]
 V(costars3)$color = "blue"
 V(costars3[V(costars2)$name]$color = "green"
-V(costars3[V(costars1)$name]$color = "yellow"
-V(costars3)[actor]$color <- "red"
-V(costars3)$label.color = "black"
-V(costars3)$frame.color = NA
-plot(costars3, vertex.label=NA, vertex.size=12, edge.curved=FALSE, 
-     main="3rd Order Connections of Kevin Bacon")
-
-
-# Get the size of 1st, 2nd and 3rd order network
-deg1 <- neighborhood.size(actnet,1, V(actnet)[actor])
-deg2 <- neighborhood.size(actnet,2, V(actnet)[actor])
-deg3 <- neighborhood.size(actnet,3, V(actnet)[actor])
-deg4 <- neighborhood.size(actnet,4, V(actnet)[actor])
-deg5 <- neighborhood.size(actnet,5, V(actnet)[actor])
-deg6 <- neighborhood.size(actnet,6, V(actnet)[actor])
-degrees.KevinBacon <- c(deg1, deg2, deg3, deg4, deg5, deg6)
-
-plot(degrees.KevinBacon, type="b", main="Number of Actors Within Each Degree of Kevin Bacon")
-
-
-
-
-### QUESTION 3 -- MATT #####################################
-# [3] Who were the most common actors? Who were most connected?
-# Pick a pair of actors and describe the shortest path between them.
-
-
-
-### QUESTION 4 -- MOIZ #####################################
-# [4] Find pairwise actor-cast association rules with at least 0.01%
-# support and 10% confidence. Describe what you find.
-
-
-
-### QUESTION 5 -- NAREEN #####################################
-# [+] What would be a regression based alternative to ARules?
-# Execute it for a single RHS actor.
+  V(costars3[V(costars1)$name]$color = "yellow"
+    V(costars3)[actor]$color <- "red"
+    V(costars3)$label.color = "black"
+    V(costars3)$frame.color = NA
+    plot(costars3, vertex.label=NA, vertex.size=12, edge.curved=FALSE, 
+         main="3rd Order Connections of Kevin Bacon")
+    
+    
+    # Get the size of 1st, 2nd and 3rd order network
+    deg1 <- neighborhood.size(actnet,1, V(actnet)[actor])
+    deg2 <- neighborhood.size(actnet,2, V(actnet)[actor])
+    deg3 <- neighborhood.size(actnet,3, V(actnet)[actor])
+    deg4 <- neighborhood.size(actnet,4, V(actnet)[actor])
+    deg5 <- neighborhood.size(actnet,5, V(actnet)[actor])
+    deg6 <- neighborhood.size(actnet,6, V(actnet)[actor])
+    degrees.KevinBacon <- c(deg1, deg2, deg3, deg4, deg5, deg6)
+    
+    plot(degrees.KevinBacon, type="b", main="Number of Actors Within Each Degree of Kevin Bacon")
+    
+    
+    ### QUESTION 3 -- MATT #####################################
+    # [3] Who were the most common actors? Who were most connected?
+    # Pick a pair of actors and describe the shortest path between them.
+    
+    # Find the most common actors (find the degrees, then sort):
+    deg<-degree(actnet)
+    deg_t10 <- as.data.frame(sort(deg, decreasing=TRUE)[1:10])
+    # Then find the most connected
+    betw <- betweenness(actnet)
+    betw_t10 <- as.data.frame(sort(betw, decreasing=TRUE)[1:10])
+    names(casts[grep("Jeremy, Ron",casts)])
+    
+    # Pick two: "Coach" and "Tuco"
+    DtoS <- get.shortest.paths(actnet, from="Nelson, Craig T.", to="Wallach, Eli")
+    V(actnet)$name[DtoS$vpath[[1]]]
+    # They're connected by Guy Boyd (who?)
+    gb <- grep("Boyd, Guy", casts)
+    names(casts[gb])
+    # What movie was Boyd in with Coach?
+    gb_ctn <- intersect(grep("Boyd, Guy", casts),grep("Nelson, Craig T.",casts))
+    names(casts[gb_ctn])
+    # How about with Eli Wallach?
+    gb_ew <- intersect(grep("Boyd, Guy", casts),grep("Wallach, Eli",casts))
+    names(casts[gb_ew])
+    # Check out the cast of that last one:
+    casts["Pride of Jesse Hallam, The"]
+    # Shoot, just lists those two.  If you wikipedia it though, turns out Johnny Cash was in it.
+    
+    
+    ### QUESTION 4 -- MOIZ #####################################
+    # [4] Find pairwise actor-cast association rules with at least 0.01%
+    # support and 10% confidence. Describe what you find.
+    
+    artrules <- apriori(casttrans, 
+                        parameter=list(support=.0001, confidence=.1, maxlen=2))
+    pairs <- labels(artrules)
+    pairs <- gsub("\\{|\\}","",pairs)
+    pairs <- strsplit(pairs," => ")
+    pairs <- do.call(rbind,pairs)
+    pairs <- pairs[pairs[,1]!="",] # no lhs
+    
+    library(igraph)
+    castnet <- graph.edgelist(pairs)
+    castnet <- as.undirected(castnet)
+    ## full plot takes time a bit of time
+    V(castnet)$color <- "cyan"
+    # the plot tries to force distances proportional to connectivity
+    # imagine nodes connected by elastic bands that you are pulling apart
+    # you can either add color/size/etc attributes to the graph itself, or just when you plot
+    # edge.curved puts straight lines between vertices; it looks good and is faster
+    plot(castnet, vertex.label=NA, vertex.size=3, edge.curved=FALSE)
+    
+    
+    ### QUESTION 5 -- NAREEN #####################################
+    # [+] What would be a regression based alternative to ARules?
+    # Execute it for a single RHS actor.
+    library(gamlr)
+    
+    q5 <- actmat[-1,]
+    x <- q5[, -grep("Zem, Roschdy" ,colnames(q5))]
+    y <- q5[, "Wan, Irene" ] 
+    causal <- gamlr(x,y, family = 'binomial')
